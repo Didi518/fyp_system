@@ -29,11 +29,35 @@ import AssignedStudents from './pages/teacher/AssignedStudents';
 // Admin Pages
 import { getUser } from './store/slices/authSlice';
 import ProjectsPage from './pages/admin/ProjectsPage';
-import DeadlinesPage from './pages/admin/DeadlinesPage';
+import DeadlinesPage from './pages/admin/DeadlinesPages';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageStudents from './pages/admin/ManageStudents';
 import ManageTeachers from './pages/admin/ManageTeachers';
 import AssignSupervisor from './pages/admin/AssignSupervisor';
+
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { authUser } = useSelector((state) => state.auth);
+  if (!authUser) {
+    return <Navigate to="/connexion" replace />;
+  }
+
+  if (
+    allowedRoles?.length &&
+    authUser?.role &&
+    !allowedRoles.includes(authUser.role)
+  ) {
+    const redirectPath =
+      authUser.role === 'Admin'
+        ? '/admin'
+        : authUser.role === 'Enseignant'
+          ? '/enseignant'
+          : '/etudiant';
+
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return children;
+};
 
 const App = () => {
   const dispatch = useDispatch();
@@ -60,6 +84,22 @@ const App = () => {
           path="/reinitialiser-mot-de-passe/:token"
           element={<ResetPasswordPage />}
         />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <DashboardLayout userRole={'Admin'} />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="etudiants" element={<ManageStudents />} />
+          <Route path="enseignants" element={<ManageTeachers />} />
+          <Route path="assigner-superviseur" element={<AssignSupervisor />} />
+          <Route path="deadlines" element={<DeadlinesPage />} />
+          <Route path="projets" element={<ProjectsPage />} />
+        </Route>
       </Routes>
       <ToastContainer theme="dark" />
     </BrowserRouter>

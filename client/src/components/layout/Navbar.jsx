@@ -1,11 +1,21 @@
 import { useState } from 'react';
-//import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+
+import { logout } from '../../store/slices/authSlice';
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { authUser } = useSelector((state) => state.auth);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  const handleLogout = () => {
+    dispatch(logout()).then(() => {
+      navigate('/connexion');
+    });
+  };
 
   const getInitials = (name) => {
     return (
@@ -54,7 +64,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
 
             {/* Logo and title */}
             <div className="flex items-center ml-4">
-              <div className="flex-shrink-0 flex items-center">
+              <div className="shrink-0 flex items-center">
                 <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                   <svg
                     className="w-5 h-5 text-white"
@@ -130,8 +140,11 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                         {authUser?.role}
                       </p>
                     </div>
-                    <button className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md mt-2">
-                      Sign out
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md mt-2"
+                    >
+                      Déconnexion
                     </button>
                   </div>
                 </div>
