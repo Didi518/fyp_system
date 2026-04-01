@@ -13,8 +13,14 @@ export const createUserByRole = asyncHandler(async (req, res, next) => {
         new ErrorHandler('Tous les champs sont requis pour un étudiant', 400),
       );
     }
-    delete data.expertises;
-    delete data.maxStudents;
+    if ('expertises' in data || 'maxStudents' in data) {
+      return next(
+        new ErrorHandler(
+          'Les champs "Compétences" et "Nombre maximum d\'étudiants" ne sont pas autorisés pour un étudiant',
+          400,
+        ),
+      );
+    }
   } else if (role === 'Enseignant') {
     if (
       !data.name ||
