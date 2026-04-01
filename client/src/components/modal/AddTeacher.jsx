@@ -11,7 +11,6 @@ const AddTeacher = () => {
     name: '',
     email: '',
     department: '',
-    password: '',
     expertises: '',
     maxStudents: 1,
   });
@@ -22,7 +21,6 @@ const AddTeacher = () => {
     if (
       !formData.name ||
       !formData.email ||
-      !formData.password ||
       !formData.department ||
       !formData.expertises ||
       !formData.maxStudents
@@ -37,7 +35,6 @@ const AddTeacher = () => {
         name: '',
         email: '',
         department: '',
-        password: '',
         expertises: '',
         maxStudents: 1,
       });
@@ -86,20 +83,6 @@ const AddTeacher = () => {
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
-                }
-                className="input-field w-full py-1 border-b border-slate-600 focus:outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Mot de Passe
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
                 }
                 className="input-field w-full py-1 border-b border-slate-600 focus:outline-none"
                 required

@@ -89,12 +89,7 @@ const ManageStudents = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.password ||
-      !formData.department
-    ) {
+    if (!formData.name || !formData.email || !formData.department) {
       return;
     }
 

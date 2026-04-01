@@ -1,6 +1,8 @@
 import ErrorHandler from '../middlewares/error.js';
 import * as userServices from '../services/userServices.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
+import { sendEmail } from '../services/emailService.js';
+import { generateAccountActivationEmailTemplate } from '../utils/emailTemplates.js';
 
 export const createUserByRole = asyncHandler(async (req, res, next) => {
   const { role, ...data } = req.body;
@@ -8,9 +10,12 @@ export const createUserByRole = asyncHandler(async (req, res, next) => {
   if (!role) return next(new ErrorHandler('Rôle requis', 400));
 
   if (role === 'Étudiant') {
-    if (!data.name || !data.email || !data.password || !data.department) {
+    if (!data.name || !data.email || !data.department) {
       return next(
-        new ErrorHandler('Tous les champs sont requis pour un étudiant', 400),
+        new ErrorHandler(
+          'Tous les champs sont requis pour un étudiant (nom, email, département)',
+          400,
+        ),
       );
     }
     if ('expertises' in data || 'maxStudents' in data) {
@@ -25,13 +30,15 @@ export const createUserByRole = asyncHandler(async (req, res, next) => {
     if (
       !data.name ||
       !data.email ||
-      !data.password ||
       !data.department ||
       !data.maxStudents ||
       !data.expertises
     ) {
       return next(
-        new ErrorHandler('Tous les champs sont requis pour un enseignant', 400),
+        new ErrorHandler(
+          'Tous les champs sont requis pour un enseignant (sans password)',
+          400,
+        ),
       );
     }
 
@@ -49,6 +56,32 @@ export const createUserByRole = asyncHandler(async (req, res, next) => {
 
   data.role = role;
   const user = await userServices.createUser(data);
+
+  if (!data.password) {
+    const activationToken = user.getActivationToken();
+    await user.save({ validateBeforeSave: false });
+
+    const activationUrl = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe/${activationToken}`;
+    const message = generateAccountActivationEmailTemplate(activationUrl);
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'SYSTEME FYP - 🎉 Activez votre compte',
+        message,
+      });
+    } catch (error) {
+      user.activationToken = undefined;
+      user.activationTokenExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+      return next(
+        new ErrorHandler(
+          error.message || "Erreur lors de l'envoi de l'e-mail d'activation",
+          500,
+        ),
+      );
+    }
+  }
 
   res.status(201).json({
     success: true,

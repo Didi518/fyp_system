@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Le mot de passe est requis'],
+      required: false,
       select: false,
       minLength: [8, 'Le mot de passe doit comporter au moins 8 caractères'],
       match: [
@@ -38,6 +38,12 @@ const userSchema = new mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    activationToken: String,
+    activationTokenExpire: Date,
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     department: {
       type: String,
       trim: true,
@@ -79,7 +85,11 @@ userSchema.pre('save', async function () {
     return;
   }
 
-  this.password = bcrypt.hash(this.password, 10);
+  if (!this.password) {
+    return;
+  }
+
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
 userSchema.methods.generateToken = function () {
@@ -103,6 +113,19 @@ userSchema.methods.getResetPasswordToken = function () {
   this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
 
   return resetToken;
+};
+
+userSchema.methods.getActivationToken = function () {
+  const activationToken = crypto.randomBytes(20).toString('hex');
+
+  this.activationToken = crypto
+    .createHash('sha256')
+    .update(activationToken)
+    .digest('hex');
+
+  this.activationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 heures
+
+  return activationToken;
 };
 
 export const User = mongoose.model('User', userSchema);

@@ -11,25 +11,19 @@ const AddStudent = () => {
     name: '',
     email: '',
     department: '',
-    password: '',
   });
 
   const handleCreateStudent = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.password ||
-      !formData.department
-    ) {
+    if (!formData.name || !formData.email || !formData.department) {
       return;
     }
 
     try {
       await dispatch(createUser({ role: 'Étudiant', ...formData })).unwrap();
 
-      setFormData({ name: '', email: '', department: '', password: '' });
+      setFormData({ name: '', email: '', department: '' });
       dispatch(toggleStudentModal());
     } catch {
       // toast déjà géré
@@ -75,20 +69,6 @@ const AddStudent = () => {
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
-                }
-                className="input-field w-full py-1 border-b border-slate-600 focus:outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Mot de Passe
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
                 }
                 className="input-field w-full py-1 border-b border-slate-600 focus:outline-none"
                 required

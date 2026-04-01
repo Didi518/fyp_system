@@ -33,6 +33,15 @@ export const login = asyncHandler(async (req, res, next) => {
     return next(new ErrorHandler('Identifiants invalides', 401));
   }
 
+  if (!user.isActive) {
+    return next(
+      new ErrorHandler(
+        "Votre compte n'a pas encore été activé. Veuillez vérifier votre email.",
+        403,
+      ),
+    );
+  }
+
   generateToken(user, 200, 'Connexion réussie', res);
 });
 
@@ -98,20 +107,7 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
 
 export const resetPassword = asyncHandler(async (req, res, next) => {
   const { token } = req.params;
-  const resetPasswordToken = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
-
-  const user = await User.findOne({
-    resetPasswordToken,
-    resetPasswordExpire: { $gt: Date.now() },
-  });
-  if (!user) {
-    return next(
-      new ErrorHandler('Token de réinitialisation invalide ou expiré', 400),
-    );
-  }
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
   if (!req.body.password || !req.body.confirmPassword) {
     return next(
@@ -128,10 +124,36 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
     );
   }
 
+  let user = await User.findOne({
+    activationToken: hashedToken,
+    activationTokenExpire: { $gt: Date.now() },
+  });
+
+  if (user) {
+    user.password = req.body.password;
+    user.isActive = true;
+    user.activationToken = undefined;
+    user.activationTokenExpire = undefined;
+    await user.save();
+
+    return generateToken(user, 200, 'Le mot de passe a bien été changé', res);
+  }
+
+  user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(
+      new ErrorHandler('Token de réinitialisation invalide ou expiré', 401),
+    );
+  }
+
   user.password = req.body.password;
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
 
-  generateToken(user, 200, 'Le mot de passe a bien été changé', res);
+  return generateToken(user, 200, 'Le mot de passe a bien été changé', res);
 });

@@ -8,7 +8,7 @@ const DashboardLayout = ({ userRole }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-[66px]">
+    <div className="min-h-screen bg-slate-50 pt-16.5">
       {/* Navbar */}
       <Navbar
         sidebarOpen={sidebarOpen}
