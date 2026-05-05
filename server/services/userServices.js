@@ -40,13 +40,20 @@ export const deleteUser = async (userDoc) => {
 };
 
 export const getAllUsers = async (page = 1, limit = 10, role = null) => {
-  const allowedRoles = ['Étudiant', 'Enseignant'];
+  const allowedRoles = ['student', 'teacher'];
   const query =
-    role && allowedRoles.includes(role) ? { role } : { role: { $ne: 'Admin' } };
+    role && allowedRoles.includes(role) ? { role } : { role: { $ne: 'admin' } };
   page = Math.max(1, Number(page) || 1);
   limit = Math.max(1, Math.min(100, Number(limit) || 10));
 
   const users = await User.find(query)
+    .populate({
+      path: 'project',
+      populate: {
+        path: 'supervisor',
+        select: 'name',
+      },
+    })
     .select('-password -resetPasswordToken -resetPasswordExpire')
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)

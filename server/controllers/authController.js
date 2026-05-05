@@ -2,16 +2,99 @@ import crypto from 'node:crypto';
 
 import { User } from '../models/user.js';
 import ErrorHandler from '../middlewares/error.js';
-import { sendEmail } from '../services/emailService.js';
 import { generateToken } from '../utils/generateToken.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-import { generateForgotPasswordEmailTemplate } from '../utils/emailTemplates.js';
+import {
+  sendEmail,
+  sendResetPasswordEmail,
+} from '../services/emailServices.js';
+import { generateAccountActivationEmailTemplate } from '../utils/emailTemplates.js';
 
-export const registerUser = asyncHandler(async (req, res, _next) => {
-  const user = new User(req.body);
-  await user.save();
+export const registerUser = asyncHandler(async (req, res, next) => {
+  const { name, email, password } = req.body;
 
-  generateToken(user, 201, 'Utilisateur bien enregistré', res);
+  if (!name || !email || !password) {
+    return next(new ErrorHandler('Tous les champs sont requis', 400));
+  }
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return next(new ErrorHandler('Email déjà utilisé', 400));
+  }
+
+  const adminExists = await User.findOne({ role: 'admin' });
+
+  if (!adminExists) {
+    await User.create({
+      name,
+      email,
+      password,
+      role: 'admin',
+      isActive: true,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Admin créé avec succès',
+    });
+  }
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role: 'student',
+    isActive: false,
+  });
+
+  if (user && !user.isActive) {
+    try {
+      user.activationToken = undefined;
+      user.activationTokenExpire = undefined;
+
+      const activationToken = user.getActivationToken();
+
+      await user.save({ validateBeforeSave: false });
+
+      const activationUrl = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe/${activationToken}`;
+      const message = generateAccountActivationEmailTemplate(activationUrl);
+
+      await sendEmail({
+        to: user.email,
+        subject: 'SYSTEME FYP - 🎉 Activez votre compte',
+        message,
+      });
+    } catch (error) {
+      user.activationToken = undefined;
+      user.activationTokenExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+    }
+  }
+
+  const activationToken = user.getActivationToken();
+  await user.save({ validateBeforeSave: false });
+
+  const activationUrl = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe/${activationToken}`;
+  const message = generateAccountActivationEmailTemplate(activationUrl);
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Activation de compte',
+      message,
+    });
+  } catch (error) {
+    user.activationToken = undefined;
+    user.activationTokenExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(new ErrorHandler("Erreur lors de l'envoi de l'email", 500));
+  }
+
+  res.status(201).json({
+    success: true,
+    message: 'Inscription réussie, vérifiez votre email',
+  });
 });
 
 export const login = asyncHandler(async (req, res, next) => {
@@ -69,40 +152,17 @@ export const getUser = asyncHandler(async (req, res, _next) => {
 
 export const forgotPassword = asyncHandler(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
+
   if (!user) {
     return next(new ErrorHandler('Utilisateur introuvable', 404));
   }
 
-  const resetToken = /** @type {any} */ (user).getResetPasswordToken();
+  await sendResetPasswordEmail(user);
 
-  await user.save({ validateBeforeSave: false });
-
-  const resetPasswordUrl = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe/${resetToken}`;
-  const message = generateForgotPasswordEmailTemplate(resetPasswordUrl);
-
-  try {
-    await sendEmail({
-      to: user.email,
-      subject: 'SYSTEME FYP - 🔏 Demande de réinitialisation du mot de passe',
-      message,
-    });
-
-    res.status(200).json({
-      success: true,
-      message: `E-mail de réinitialisation du mot de passe a bien été envoyé à ${user.email}`,
-    });
-  } catch (error) {
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-
-    await user.save({ validateBeforeSave: false });
-    return next(
-      new ErrorHandler(
-        error.message || "Erreur lors de l'envoi de l'e-mail",
-        500,
-      ),
-    );
-  }
+  res.status(200).json({
+    success: true,
+    message: 'Si un compte existe, un email a été envoyé',
+  });
 });
 
 export const resetPassword = asyncHandler(async (req, res, next) => {
@@ -134,6 +194,7 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
     user.isActive = true;
     user.activationToken = undefined;
     user.activationTokenExpire = undefined;
+    user.passwordChangedAt = new Date(Date.now() - 1000);
     await user.save();
 
     return generateToken(user, 200, 'Le mot de passe a bien été changé', res);
@@ -144,16 +205,72 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
     resetPasswordExpire: { $gt: Date.now() },
   });
 
-  if (!user) {
-    return next(
-      new ErrorHandler('Token de réinitialisation invalide ou expiré', 401),
-    );
+  if (user) {
+    user.password = req.body.password;
+
+    if (!user.isActive) user.isActive = true;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    user.passwordChangedAt = new Date(Date.now() - 1000);
+
+    await user.save();
+
+    return generateToken(user, 200, 'Le mot de passe a bien été changé', res);
   }
 
-  user.password = req.body.password;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpire = undefined;
-  await user.save();
-
   return generateToken(user, 200, 'Le mot de passe a bien été changé', res);
+});
+
+export const resendActivationToken = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) return next(new ErrorHandler('Email requis', 400));
+
+  const user = await User.findOne({ email });
+  if (user && !user.isActive) {
+    user.activationToken = undefined;
+    user.activationTokenExpire = undefined;
+
+    const token = user.getActivationToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    const activationUrl = `${process.env.FRONTEND_URL}/reinitialiser-mot-de-passe/${token}`;
+    const message = generateAccountActivationEmailTemplate(activationUrl);
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'SYSTEME FYP - 🎉 Activez votre compte',
+        message,
+      });
+    } catch {
+      user.activationToken = undefined;
+      user.activationTokenExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+    }
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Si un compte existe, un email a été envoyé',
+  });
+});
+
+export const resendResetToken = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return next(new ErrorHandler('Email requis', 400));
+  }
+
+  const user = await User.findOne({ email });
+
+  if (user) {
+    await sendResetPasswordEmail(user);
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Si un compte existe, un email a été envoyé',
+  });
 });

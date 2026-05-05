@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { XIcon } from 'lucide-react';
-import { useDispatch } from 'react-redux';
 
-import { createUser } from '../../store/slices/adminSlice';
-import { toggleTeacherModal } from '../../store/slices/popupSlice';
+import { useAdmin, usePopup } from '../../hooks';
 
 const AddTeacher = () => {
-  const dispatch = useDispatch();
+  const { createUser } = useAdmin();
+  const { isCreateTeacherModalOpen, closeTeacherModal } = usePopup();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -29,7 +28,7 @@ const AddTeacher = () => {
     }
 
     try {
-      await dispatch(createUser({ role: 'Enseignant', ...formData })).unwrap();
+      await createUser({ role: 'teacher', ...formData }).unwrap?.();
 
       setFormData({
         name: '',
@@ -38,11 +37,13 @@ const AddTeacher = () => {
         expertises: '',
         maxStudents: 1,
       });
-      dispatch(toggleTeacherModal());
+      closeTeacherModal();
     } catch {
       // toast déjà géré
     }
   };
+
+  if (!isCreateTeacherModalOpen) return null;
 
   return (
     <>
@@ -53,7 +54,7 @@ const AddTeacher = () => {
               Ajouter Enseignant
             </h3>
             <button
-              onClick={() => dispatch(toggleTeacherModal())}
+              onClick={closeTeacherModal}
               className="text-slate-400 hover:to-slate-600"
             >
               <XIcon className="w-6 h-6" />
@@ -175,10 +176,7 @@ const AddTeacher = () => {
               />
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button
-                onClick={() => dispatch(toggleTeacherModal())}
-                className="btn-danger"
-              >
+              <button onClick={closeTeacherModal} className="btn-danger">
                 Annuler
               </button>
               <button type="submit" className="btn-primary">

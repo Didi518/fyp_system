@@ -4,6 +4,7 @@ import { User } from '../models/user.js';
 
 import ErrorHandler from './error.js';
 import { asyncHandler } from './asyncHandler.js';
+import { roleLabels } from '../constants/constants.js';
 
 export const isAuthenticated = asyncHandler(async (req, _res, next) => {
   const { token } = req.cookies;
@@ -31,11 +32,23 @@ export const isAuthenticated = asyncHandler(async (req, _res, next) => {
   }
 
   const user = await User.findById(decoded.id).select(
-    '-resetPasswordToken -resetPasswordExpire',
+    '-resetPasswordToken -resetPasswordExpire -activationToken -activationTokenExpire',
   );
 
   if (!user) {
     return next(new ErrorHandler('Utilisateur introuvable', 404));
+  }
+
+  if (
+    user.passwordChangedAt &&
+    decoded.iat < user.passwordChangedAt.getTime() / 1000
+  ) {
+    return next(
+      new ErrorHandler(
+        'Mot de passe changé récemment. Veuillez vous reconnecter',
+        401,
+      ),
+    );
   }
 
   req.user = user;
@@ -48,7 +61,7 @@ export const isAuthorized = (...roles) => {
     if (!roles.includes(req.user.role)) {
       return next(
         new ErrorHandler(
-          `Votre rôle: "${req.user.role.toLowerCase()}" ne vous autorise pas à accéder à cette page`,
+          `Votre rôle: "${roleLabels[req.user.role]}" ne vous autorise pas à accéder à cette page`,
           403,
         ),
       );

@@ -1,60 +1,68 @@
 import ErrorHandler from '../middlewares/error.js';
+import { roleLabels } from '../constants/constants.js';
+import { sendEmail } from '../services/emailServices.js';
 import * as userServices from '../services/userServices.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
-import { sendEmail } from '../services/emailService.js';
+import * as projectServices from '../services/projectServices.js';
 import { generateAccountActivationEmailTemplate } from '../utils/emailTemplates.js';
 
 export const createUserByRole = asyncHandler(async (req, res, next) => {
-  const { role, ...data } = req.body;
+  const { role } = req.body;
 
-  if (!role) return next(new ErrorHandler('Rôle requis', 400));
+  if (!role) {
+    return next(new ErrorHandler('Rôle requis', 400));
+  }
 
-  if (role === 'Étudiant') {
-    if (!data.name || !data.email || !data.department) {
+  let data = {};
+
+  if (role === 'student') {
+    const { name, email, department } = req.body;
+
+    if (!name || !email || !department) {
       return next(
-        new ErrorHandler(
-          'Tous les champs sont requis pour un étudiant (nom, email, département)',
-          400,
-        ),
-      );
-    }
-    if ('expertises' in data || 'maxStudents' in data) {
-      return next(
-        new ErrorHandler(
-          'Les champs "Compétences" et "Nombre maximum d\'étudiants" ne sont pas autorisés pour un étudiant',
-          400,
-        ),
-      );
-    }
-  } else if (role === 'Enseignant') {
-    if (
-      !data.name ||
-      !data.email ||
-      !data.department ||
-      !data.maxStudents ||
-      !data.expertises
-    ) {
-      return next(
-        new ErrorHandler(
-          'Tous les champs sont requis pour un enseignant (sans password)',
-          400,
-        ),
+        new ErrorHandler('Tous les champs sont requis pour un étudiant', 400),
       );
     }
 
-    data.expertises = Array.isArray(data.expertises)
-      ? data.expertises
-      : typeof data.expertises === 'string'
-        ? data.expertises
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [];
+    data = { name, email, department };
+  } else if (role === 'teacher') {
+    let { name, email, department, maxStudents, expertises } = req.body;
+
+    if (!name || !email || !department || !maxStudents || !expertises) {
+      return next(
+        new ErrorHandler('Tous les champs sont requis pour un enseignant', 400),
+      );
+    }
+
+    expertises = Array.isArray(expertises)
+      ? expertises
+      : expertises
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+    data = { name, email, department, maxStudents, expertises };
+  } else if (role === 'admin') {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return next(
+        new ErrorHandler('Tous les champs sont requis pour un admin', 400),
+      );
+    }
+
+    data = {
+      name,
+      email,
+      password,
+      isActive: true,
+    };
   } else {
     return next(new ErrorHandler('Rôle invalide', 400));
   }
 
   data.role = role;
+
   const user = await userServices.createUser(data);
 
   if (!data.password) {
@@ -67,25 +75,21 @@ export const createUserByRole = asyncHandler(async (req, res, next) => {
     try {
       await sendEmail({
         to: user.email,
-        subject: 'SYSTEME FYP - 🎉 Activez votre compte',
+        subject: 'Activation de compte',
         message,
       });
     } catch (error) {
       user.activationToken = undefined;
       user.activationTokenExpire = undefined;
       await user.save({ validateBeforeSave: false });
-      return next(
-        new ErrorHandler(
-          error.message || "Erreur lors de l'envoi de l'e-mail d'activation",
-          500,
-        ),
-      );
+
+      return next(new ErrorHandler("Erreur lors de l'envoi de l'email", 500));
     }
   }
 
   res.status(201).json({
     success: true,
-    message: `${role} créé!`,
+    message: `${roleLabels[role]} créé`,
     data: { user },
   });
 });
@@ -103,7 +107,7 @@ export const updateUserByRole = asyncHandler(async (req, res, next) => {
   const user = await userServices.getUserById(id);
   if (!user) return next(new ErrorHandler('Utilisateur non trouvé', 404));
 
-  if (user.role === 'Admin' && req.user.id !== id) {
+  if (user.role === 'admin' && req.user.id !== id) {
     return next(
       new ErrorHandler(
         'Vous ne pouvez pas éditer un autre administrateur',
@@ -122,7 +126,7 @@ export const updateUserByRole = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: `${user.role} mis à jour!`,
+    message: `${roleLabels[user.role]} mis à jour!`,
     data: { user: updatedUser },
   });
 });
@@ -139,7 +143,7 @@ export const deleteUserByRole = asyncHandler(async (req, res, next) => {
     );
   }
 
-  if (user.role === 'Admin') {
+  if (user.role === 'admin') {
     return next(
       new ErrorHandler('Vous ne pouvez pas supprimer un administrateur', 403),
     );
@@ -149,14 +153,14 @@ export const deleteUserByRole = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: `Utilisateur (${user.name}) supprimé (${user.role.toLowerCase()})`,
+    message: `Utilisateur (${user.name}) supprimé (${roleLabels[user.role].toLowerCase()})`,
   });
 });
 
 export const getAllUsers = asyncHandler(async (req, res, next) => {
   const { page = 1, limit = 10, role } = req.query;
 
-  if (role && role === 'Admin') {
+  if (role && role === 'admin') {
     return next(
       new ErrorHandler('Accès refusé: impossible de filtrer par Admin', 403),
     );
@@ -184,9 +188,36 @@ export const getAllUsers = asyncHandler(async (req, res, next) => {
   });
 });
 
+export const getAllProjects = asyncHandler(async (req, res, next) => {
+  const { page = 1, limit = 10, status } = req.query;
+
+  if (req.user.role && req.user.role !== 'admin') {
+    return next(new ErrorHandler('Accès refusé.', 403));
+  }
+
+  const result = await projectServices.getAllProjects(
+    Number(page),
+    Number(limit),
+    status || null,
+  );
+
+  res.status(200).json({
+    success: true,
+    message: 'Projets récupérés!',
+    data: {
+      projects: result.projects,
+      pagination: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.pages,
+        results: result.count,
+      },
+    },
+  });
+});
+
 // TODO::
 // export const assignSupervisor = asyncHandler(async (req, res, next) => {});
-
-// export const getAllProjects = asyncHandler(async (req, res, next) => {});
 
 // export const getDashboardStats = asyncHandler(async (req, res, next) => {});

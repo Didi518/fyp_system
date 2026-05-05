@@ -1,27 +1,23 @@
+import { useSelector } from 'react-redux';
 import { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   AlertTriangleIcon,
+  BadgeCheckIcon,
   CheckCircleIcon,
   PlusIcon,
   TriangleAlertIcon,
   UsersIcon,
+  XCircleIcon,
   XIcon,
 } from 'lucide-react';
 
+import { useAdmin, usePopup } from '../../hooks';
 import AddStudent from '../../components/modal/AddStudent';
-import { toggleStudentModal } from '../../store/slices/popupSlice';
-import {
-  createUser,
-  deleteUser,
-  getAllUsers,
-  updateUser,
-} from '../../store/slices/adminSlice';
 
 const ManageStudents = () => {
-  const dispatch = useDispatch();
-  const { projects, users } = useSelector((state) => state.admin);
-  const { isCreateStudentModalOpen } = useSelector((state) => state.popup);
+  const { isCreateStudentModalOpen, openStudentModal } = usePopup();
+  const { createUser, updateUser, deleteUser, getAllUsers } = useAdmin();
+  const { users } = useSelector((state) => state.admin);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -34,24 +30,19 @@ const ManageStudents = () => {
     department: '',
   });
 
-  const students = useMemo(() => {
-    const studentUsers = (users || []).filter(
-      (u) => u.role?.toLowerCase() === 'étudiant',
-    );
+  useEffect(() => {
+    getAllUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    return studentUsers.map((student) => {
-      const studentProject = (projects || []).find(
-        (p) => p.student?._id === student._id,
-      );
-
-      return {
-        ...student,
-        projectTitle: studentProject ? studentProject?.title : null,
-        supervisor: studentProject ? studentProject?.supervisor : null,
-        projectStatus: studentProject ? studentProject?.status : null,
-      };
-    });
-  }, [projects, users]);
+  const students = users
+    .filter((u) => u.role === 'student')
+    .map((student) => ({
+      ...student,
+      projectTitle: student.project?.title || null,
+      supervisor: student.project?.supervisor || null,
+      projectStatus: student.project?.status || null,
+    }));
 
   const departments = useMemo(() => {
     const set = new Set(
@@ -60,10 +51,6 @@ const ManageStudents = () => {
 
     return Array.from(set);
   }, [students]);
-
-  useEffect(() => {
-    dispatch(getAllUsers({ role: 'Étudiant' }));
-  }, [dispatch]);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
@@ -95,16 +82,17 @@ const ManageStudents = () => {
 
     try {
       if (editingStudent) {
-        await dispatch(
-          updateUser({ id: editingStudent._id, ...formData }),
-        ).unwrap();
+        await updateUser({
+          id: editingStudent._id,
+          ...formData,
+        }).unwrap?.();
       } else {
-        await dispatch(createUser({ role: 'Étudiant', ...formData })).unwrap();
+        await createUser({ role: 'student', ...formData }).unwrap?.();
       }
 
       handleCloseModal();
     } catch {
-      // osef, le toast s'en charge
+      // toast déjà géré
     }
   };
 
@@ -126,7 +114,7 @@ const ManageStudents = () => {
 
   const confirmDelete = () => {
     if (studentToDelete) {
-      dispatch(deleteUser(studentToDelete._id));
+      deleteUser(studentToDelete._id);
       setShowDeleteModal(false);
       setStudentToDelete(null);
     }
@@ -149,11 +137,11 @@ const ManageStudents = () => {
               </p>
             </div>
             <button
-              onClick={() => dispatch(toggleStudentModal())}
+              onClick={openStudentModal}
               className="btn-primary flex items-center space-x-2 mt-4 md:mt-0"
             >
               <PlusIcon className="w-5 h-5" />
-              <span>Ajouter Nouvel Étudiants</span>
+              <span>Ajouter Nouvel Étudiant</span>
             </button>
           </div>
         </div>
@@ -271,12 +259,29 @@ const ManageStudents = () => {
                     return (
                       <tr key={student._id} className="hover:bg-slate-50">
                         <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">
+                          <div className="space-y-1">
+                            <div
+                              className={`text-sm font-medium ${!student.isActive && 'text-slate-400'}`}
+                            >
                               {student.name}
                             </div>
+
                             <div className="text-sm text-slate-500">
                               {student.email}
+                            </div>
+
+                            <div>
+                              {student.isActive ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-green-800 bg-green-100 text-xs font-medium">
+                                  <BadgeCheckIcon className="w-3 h-3" />
+                                  Vérifié
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-red-800 bg-red-100 text-xs font-medium">
+                                  <XCircleIcon className="w-3 h-3" />
+                                  En attente
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>

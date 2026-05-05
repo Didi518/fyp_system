@@ -9,6 +9,8 @@ import {
   logout,
   registerUser,
   resetPassword,
+  resendActivationToken,
+  resendResetToken,
 } from '../controllers/authController.js';
 
 const router = express.Router();
@@ -16,6 +18,8 @@ const router = express.Router();
 router.post('/register', registerUser);
 router.post('/login', login);
 router.post('/password/forgot', forgotPassword);
+router.post('/password/resend-token', resendResetToken);
+router.post('/activation/resend-token', resendActivationToken);
 
 router.get('/me', isAuthenticated, getUser);
 router.get('/logout', isAuthenticated, logout);

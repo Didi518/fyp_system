@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import { KeyRoundIcon, LoaderIcon } from 'lucide-react';
 
-import { forgotPassword } from '../../store/slices/authSlice';
+import { useAuth } from '../../hooks';
 
 const ForgotPasswordPage = () => {
-  const dispatch = useDispatch();
+  const { forgotPassword, isRequestingToken } = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const { isRequestingForToken } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +26,7 @@ const ForgotPasswordPage = () => {
     setError('');
 
     try {
-      await dispatch(forgotPassword({ email })).unwrap();
+      await forgotPassword(email).unwrap?.();
       setIsSubmitted(true);
     } catch (error) {
       setError(error.message || 'Une erreur est survenue');
@@ -132,17 +130,17 @@ const ForgotPasswordPage = () => {
                   }}
                   className={`input ${error ? 'input-error' : ''}`}
                   placeholder="Entrez votre email"
-                  disabled={isRequestingForToken}
+                  disabled={isRequestingToken}
                 />
                 {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
               </div>
 
               <button
                 type="submit"
-                disabled={isRequestingForToken}
+                disabled={isRequestingToken}
                 className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isRequestingForToken ? (
+                {isRequestingToken ? (
                   <div className="flex justify-center items-center">
                     <LoaderIcon className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
                     Envoi...

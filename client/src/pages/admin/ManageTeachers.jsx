@@ -1,26 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   AlertTriangleIcon,
   BadgeCheckIcon,
   PlusIcon,
   TriangleAlertIcon,
   UsersIcon,
+  XCircleIcon,
   XIcon,
 } from 'lucide-react';
 
 import AddTeacher from '../../components/modal/AddTeacher';
-import { toggleTeacherModal } from '../../store/slices/popupSlice';
-import {
-  deleteUser,
-  getAllUsers,
-  updateUser,
-} from '../../store/slices/adminSlice';
+import { useAdmin, usePopup } from '../../hooks';
 
 const ManageTeachers = () => {
-  const dispatch = useDispatch();
+  const { deleteUser, updateUser } = useAdmin();
+  const { isCreateTeacherModalOpen, openTeacherModal } = usePopup();
   const { users } = useSelector((state) => state.admin);
-  const { isCreateTeacherModalOpen } = useSelector((state) => state.popup);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
@@ -36,7 +32,7 @@ const ManageTeachers = () => {
   });
 
   const teachers = useMemo(
-    () => (users || []).filter((u) => u.role?.toLowerCase() === 'enseignant'),
+    () => (users || []).filter((u) => u.role?.toLowerCase() === 'teacher'),
     [users],
   );
 
@@ -47,10 +43,6 @@ const ManageTeachers = () => {
 
     return Array.from(set);
   }, [teachers]);
-
-  useEffect(() => {
-    dispatch(getAllUsers({ role: 'Enseignant' }));
-  }, [dispatch]);
 
   const filteredTeachers = teachers.filter((teacher) => {
     const matchesSearch =
@@ -90,14 +82,15 @@ const ManageTeachers = () => {
 
     try {
       if (editingTeacher) {
-        await dispatch(
-          updateUser({ id: editingTeacher._id, ...formData }),
-        ).unwrap();
+        await updateUser({
+          id: editingTeacher._id,
+          ...formData,
+        }).unwrap?.();
       }
 
       handleCloseModal();
     } catch {
-      // osef, le toast s'en charge
+      // toast déjà géré
     }
   };
 
@@ -124,7 +117,7 @@ const ManageTeachers = () => {
 
   const confirmDelete = () => {
     if (teacherToDelete) {
-      dispatch(deleteUser(teacherToDelete._id));
+      deleteUser(teacherToDelete._id);
       setShowDeleteModal(false);
       setTeacherToDelete(null);
     }
@@ -147,7 +140,7 @@ const ManageTeachers = () => {
               </p>
             </div>
             <button
-              onClick={() => dispatch(toggleTeacherModal())}
+              onClick={openTeacherModal}
               className="btn-primary flex items-center space-x-2 mt-4 md:mt-0"
             >
               <PlusIcon className="w-5 h-5" />
@@ -270,12 +263,29 @@ const ManageTeachers = () => {
                     return (
                       <tr key={teacher._id} className="hover:bg-slate-50">
                         <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">
+                          <div className="space-y-1">
+                            <div
+                              className={`text-sm font-medium ${!teacher.isActive && 'text-slate-400'}`}
+                            >
                               {teacher.name}
                             </div>
+
                             <div className="text-sm text-slate-500">
                               {teacher.email}
+                            </div>
+
+                            <div>
+                              {teacher.isActive ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-green-800 bg-green-100 text-xs font-medium">
+                                  <BadgeCheckIcon className="w-3 h-3" />
+                                  Vérifié
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-red-800 bg-red-100 text-xs font-medium">
+                                  <XCircleIcon className="w-3 h-3" />
+                                  En attente
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -423,21 +433,18 @@ const ManageTeachers = () => {
                       <option value="Développement Web">
                         Développement Web
                       </option>
-                      <option value="Développement Web">
-                        Développement Web
-                      </option>
                       <option value="Développement Appli Mobile">
                         Développement Appli Mobile
                       </option>
-                      <option value="Database System">Database System</option>
+                      <option value="Database Systems">Database Systems</option>
                       <option value="Réseau Informatique">
                         Réseau Informatique
                       </option>
-                      <option value="Système d'Exploitation">
-                        Système d'Exploitation
+                      <option value="Systèmes d'Exploitation">
+                        Systèmes d'Exploitation
                       </option>
-                      <option value="Interaction Homme-Machine">
-                        Interaction Homme-Machine
+                      <option value="Interactions Homme-Machine">
+                        Interactions Homme-Machine
                       </option>
                       <option value="Analyse Données">Analyse Données</option>
                       <option value="Blockchain">Blockchain</option>

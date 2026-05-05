@@ -1,19 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import { BookOpenIcon, LoaderIcon } from 'lucide-react';
 
-import { login } from '../../store/slices/authSlice';
+import { useAuth } from '../../hooks';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { isLoggingIn, authUser } = useSelector((state) => state.auth);
+  const { login, isLoggingIn, authUser } = useAuth();
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'Étudiant',
+    role: 'student',
   });
 
   const handleChange = (e) => {
@@ -52,25 +50,23 @@ const LoginPage = () => {
       return;
     }
 
-    const data = new FormData();
-
-    data.append('email', formData.email);
-    data.append('password', formData.password);
-    data.append('role', formData.role);
-
-    dispatch(login(data));
+    login({
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    });
   };
 
   useEffect(() => {
     if (authUser) {
       switch (formData.role) {
-        case 'Étudiant':
+        case 'student':
           navigate('/etudiant');
           break;
-        case 'Enseignant':
+        case 'teacher':
           navigate('/enseignant');
           break;
-        case 'Admin':
+        case 'admin':
           navigate('/admin');
           break;
 
@@ -109,9 +105,9 @@ const LoginPage = () => {
                 value={formData.role}
                 onChange={handleChange}
               >
-                <option value="Étudiant">Étudiant</option>
-                <option value="Enseignant">Enseignant</option>
-                <option value="Admin">Admin</option>
+                <option value="student">Étudiant</option>
+                <option value="teacher">Enseignant</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 

@@ -6,17 +6,17 @@ const Sidebar = ({ open, setOpen, userRole }) => {
 
   const getNavigationItems = () => {
     switch (userRole) {
-      case 'Étudiant':
+      case 'student':
         return [
           { name: 'Accueil', path: '/etudiant', icon: 'home' },
           {
-            name: 'Submit Proposal',
+            name: 'Proposition',
             path: '/etudiant/proposition',
             icon: 'document',
           },
           {
-            name: 'Upload Files',
-            path: '/etudiant/charger-fichiers',
+            name: 'Pièces Jointes',
+            path: '/etudiant/telecharger-fichiers',
             icon: 'upload',
           },
           { name: 'Superviseur', path: '/etudiant/superviseur', icon: 'user' },
@@ -27,7 +27,7 @@ const Sidebar = ({ open, setOpen, userRole }) => {
             icon: 'bell',
           },
         ];
-      case 'Enseignant':
+      case 'teacher':
         return [
           { name: 'Accueil', path: '/enseignant', icon: 'home' },
           {
@@ -42,7 +42,7 @@ const Sidebar = ({ open, setOpen, userRole }) => {
           },
           { name: 'Fichiers', path: '/enseignant/fichiers', icon: 'folder' },
         ];
-      case 'Admin':
+      case 'admin':
         return [
           { name: 'Accueil', path: '/admin', icon: 'home' },
           {

@@ -33,16 +33,17 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: 'Étudiant',
-      enum: ['Étudiant', 'Enseignant', 'Admin'],
+      default: 'student',
+      enum: ['student', 'teacher', 'admin'],
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     activationToken: String,
     activationTokenExpire: Date,
+    passwordChangedAt: Date,
     isActive: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     department: {
       type: String,
@@ -123,7 +124,7 @@ userSchema.methods.getActivationToken = function () {
     .update(activationToken)
     .digest('hex');
 
-  this.activationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 heures
+  this.activationTokenExpire = Date.now() + 24 * 60 * 60 * 1000;
 
   return activationToken;
 };

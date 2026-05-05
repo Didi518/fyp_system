@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { XIcon } from 'lucide-react';
-import { useDispatch } from 'react-redux';
 
-import { createUser } from '../../store/slices/adminSlice';
-import { toggleStudentModal } from '../../store/slices/popupSlice';
+import { useAdmin, usePopup } from '../../hooks';
 
 const AddStudent = () => {
-  const dispatch = useDispatch();
+  const { createUser } = useAdmin();
+  const { isCreateStudentModalOpen, closeStudentModal } = usePopup();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,14 +20,16 @@ const AddStudent = () => {
     }
 
     try {
-      await dispatch(createUser({ role: 'Étudiant', ...formData })).unwrap();
+      await createUser({ role: 'student', ...formData }).unwrap();
 
       setFormData({ name: '', email: '', department: '' });
-      dispatch(toggleStudentModal());
+      closeStudentModal();
     } catch {
       // toast déjà géré
     }
   };
+
+  if (!isCreateStudentModalOpen) return null;
 
   return (
     <>
@@ -39,7 +40,7 @@ const AddStudent = () => {
               Ajouter Étudiant
             </h3>
             <button
-              onClick={() => dispatch(toggleStudentModal())}
+              onClick={closeStudentModal}
               className="text-slate-400 hover:to-slate-600"
             >
               <XIcon className="w-6 h-6" />
@@ -101,10 +102,7 @@ const AddStudent = () => {
               </select>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button
-                onClick={() => dispatch(toggleStudentModal())}
-                className="btn-danger"
-              >
+              <button onClick={closeStudentModal} className="btn-danger">
                 Annuler
               </button>
               <button type="submit" className="btn-primary">

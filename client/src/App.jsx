@@ -1,18 +1,16 @@
 import { useEffect } from 'react';
 import { LoaderIcon } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
-import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Auth Pages
+import { useAuth, useAdmin } from './hooks';
+
 import LoginPage from './pages/auth/LoginPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 
-// Dashboard Layouts
 import DashboardLayout from './components/layout/DashboardLayout';
 
-// Student Pages
 import UploadFiles from './pages/student/UploadFiles';
 import FeedbackPage from './pages/student/FeedbackPage';
 import SubmitProposal from './pages/student/SubmitProposal';
@@ -20,14 +18,11 @@ import SupervisorPage from './pages/student/SupervisorPage';
 import StudentDashboard from './pages/student/StudentDashboard';
 import NotificationsPage from './pages/student/NotificationsPage';
 
-// Teacher Pages
 import TeacherFiles from './pages/teacher/TeacherFiles';
 import PendingRequests from './pages/teacher/PendingRequests';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import AssignedStudents from './pages/teacher/AssignedStudents';
 
-// Admin Pages
-import { getUser } from './store/slices/authSlice';
 import ProjectsPage from './pages/admin/ProjectsPage';
 import DeadlinesPage from './pages/admin/DeadlinesPages';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -36,7 +31,7 @@ import ManageTeachers from './pages/admin/ManageTeachers';
 import AssignSupervisor from './pages/admin/AssignSupervisor';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { authUser } = useSelector((state) => state.auth);
+  const { authUser } = useAuth();
   if (!authUser) {
     return <Navigate to="/connexion" replace />;
   }
@@ -47,9 +42,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     !allowedRoles.includes(authUser.role)
   ) {
     const redirectPath =
-      authUser.role === 'Admin'
+      authUser.role === 'admin'
         ? '/admin'
-        : authUser.role === 'Enseignant'
+        : authUser.role === 'teacher'
           ? '/enseignant'
           : '/etudiant';
 
@@ -60,12 +55,21 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 const App = () => {
-  const dispatch = useDispatch();
-  const { authUser, isCheckingAuth } = useSelector((state) => state.auth);
+  const { getAllUsers, getAllProjects } = useAdmin();
+  const { authUser, isCheckingAuth, getUser } = useAuth();
 
   useEffect(() => {
-    dispatch(getUser());
-  }, [dispatch]);
+    if (!authUser) {
+      getUser();
+    }
+  }, [authUser, getUser]);
+
+  useEffect(() => {
+    if (authUser && authUser?.role === 'admin') {
+      getAllUsers();
+      getAllProjects();
+    }
+  }, [authUser, getAllUsers, getAllProjects]);
 
   if (isCheckingAuth && !authUser) {
     return (
@@ -88,8 +92,8 @@ const App = () => {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute allowedRoles={['Admin']}>
-              <DashboardLayout userRole={'Admin'} />
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DashboardLayout userRole={'admin'} />
             </ProtectedRoute>
           }
         >
@@ -99,6 +103,21 @@ const App = () => {
           <Route path="assigner-superviseur" element={<AssignSupervisor />} />
           <Route path="deadlines" element={<DeadlinesPage />} />
           <Route path="projets" element={<ProjectsPage />} />
+        </Route>
+        <Route
+          path="/etudiant"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <DashboardLayout userRole={'student'} />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<StudentDashboard />} />
+          <Route path="proposition" element={<SubmitProposal />} />
+          <Route path="telecharger-fichiers" element={<UploadFiles />} />
+          <Route path="superviseur" element={<SupervisorPage />} />
+          <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Routes>
       <ToastContainer theme="dark" />

@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 
-import { logout } from '../../store/slices/authSlice';
+import { useAuth } from '../../hooks';
+import { roleLabels } from '../../constants/constants';
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { authUser } = useSelector((state) => state.auth);
+  const { logout, authUser } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const handleLogout = () => {
-    dispatch(logout()).then(() => {
+    logout().then(() => {
       navigate('/connexion');
     });
   };
@@ -107,7 +106,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                     {authUser?.name}
                   </p>
                   <p className="text-xs text-slate-500 capitalize">
-                    {authUser?.role}
+                    {roleLabels[authUser?.role]}
                   </p>
                 </div>
                 <svg
@@ -137,7 +136,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                         {authUser?.email}
                       </p>
                       <p className="text-xs text-blue-600 capitalize font-medium mt-1">
-                        {authUser?.role}
+                        {roleLabels[authUser?.role]}
                       </p>
                     </div>
                     <button

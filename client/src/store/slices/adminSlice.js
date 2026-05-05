@@ -97,6 +97,26 @@ export const getAllUsers = createAsyncThunk(
   },
 );
 
+export const getAllProjects = createAsyncThunk(
+  'getAllProjects',
+  async (_, thunkAPI) => {
+    try {
+      const response = await axiosInstance.get('/admin/projects');
+
+      return response.data.data.projects;
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          'Erreur lors de la récupération des projets',
+      );
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message ||
+          'Erreur lors de la récupération des projets',
+      );
+    }
+  },
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
@@ -105,60 +125,73 @@ const adminSlice = createSlice({
     projects: [],
     users: [],
     stats: null,
-    loading: false,
+    loadingUsers: false,
+    loadingProjects: false,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(createUser.pending, (state) => {
-        state.loading = true;
+        state.loadingUsers = true;
         state.error = null;
       })
       .addCase(createUser.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
         state.users.unshift(action.payload);
       })
       .addCase(createUser.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
         state.error = action.payload;
       })
       .addCase(updateUser.pending, (state) => {
-        state.loading = true;
+        state.loadingUsers = true;
         state.error = null;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
         state.users = state.users.map((u) =>
           u._id === action.payload._id ? { ...u, ...action.payload } : u,
         );
       })
       .addCase(updateUser.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
         state.error = action.payload;
       })
       .addCase(deleteUser.pending, (state) => {
-        state.loading = true;
+        state.loadingUsers = true;
         state.error = null;
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
         state.users = state.users.filter((u) => u._id !== action.payload);
       })
       .addCase(deleteUser.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
         state.error = action.payload;
       })
       .addCase(getAllUsers.pending, (state) => {
-        state.loading = true;
+        state.loadingUsers = true;
         state.error = null;
       })
       .addCase(getAllUsers.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
         state.users = action.payload.users;
       })
       .addCase(getAllUsers.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingUsers = false;
+        state.error = action.payload;
+      })
+      .addCase(getAllProjects.pending, (state) => {
+        state.loadingProjects = true;
+        state.error = null;
+      })
+      .addCase(getAllProjects.fulfilled, (state, action) => {
+        state.loadingProjects = false;
+        state.projects = action.payload;
+      })
+      .addCase(getAllProjects.rejected, (state, action) => {
+        state.loadingProjects = false;
         state.error = action.payload;
       });
   },
