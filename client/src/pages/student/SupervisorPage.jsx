@@ -161,7 +161,7 @@ const SupervisorPage = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-slate-500 uppercase tracking-wide">
-                      Deadline
+                      Date Limite
                     </label>
                     <p className="text-lg font-semibold text-slate-800 mt-1">
                       {project?.deadline

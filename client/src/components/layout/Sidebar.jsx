@@ -20,7 +20,7 @@ const Sidebar = ({ open, setOpen, userRole }) => {
             icon: 'upload',
           },
           { name: 'Superviseur', path: '/etudiant/superviseur', icon: 'user' },
-          { name: 'Feedback', path: '/etudiant/feedback', icon: 'chat' },
+          { name: 'Retours', path: '/etudiant/retours', icon: 'chat' },
           {
             name: 'Notifications',
             path: '/etudiant/notifications',
@@ -60,7 +60,7 @@ const Sidebar = ({ open, setOpen, userRole }) => {
             path: '/admin/assigner-superviseurs',
             icon: 'link',
           },
-          { name: 'Deadlines', path: '/admin/deadlines', icon: 'calendar' },
+          { name: 'Date Limite', path: '/admin/date-limite', icon: 'calendar' },
           { name: 'Projets', path: '/admin/projets', icon: 'folder' },
         ];
       default:

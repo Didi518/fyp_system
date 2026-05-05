@@ -196,52 +196,52 @@ const UploadFiles = () => {
                   </div>
                 );
               })}
-              <div className="card">
-                <div className="card-header">
-                  <h2 className="card-title">Fichiers Envoyés</h2>
-                  <p className="card-subtitle">
-                    Gérer les uploads du projet déjà envoyés.
-                  </p>
-                </div>
-                {(files || []).length === 0 ? (
-                  <div className="text-center py-4">
-                    <FilePlusIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <p>Aucun fichier uploadé pour le moment</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {files.map((file) => (
-                      <div
-                        key={file._id || file.fileUrl}
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
-                      >
-                        <div className="flex items-center space-x-4">
-                          {getFileIcon(file.originalName)}
-                          <div>
-                            <p className="font-medium text-slate-800">
-                              {file.originalName}
-                            </p>
-                            <div className="flex items-center space-x-4 text-sm text-slate-600">
-                              <span>{file.fileType || 'Fichier'}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            className="btn-outline btn-small"
-                            onClick={() => handleDownloadFile(file)}
-                          >
-                            Télécharger
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">Fichiers Envoyés</h2>
+            <p className="card-subtitle">
+              Gérer les uploads du projet déjà envoyés.
+            </p>
+          </div>
+          {(files || []).length === 0 ? (
+            <div className="text-center py-4">
+              <FilePlusIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <p>Aucun fichier uploadé pour le moment</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {files.map((file) => (
+                <div
+                  key={file._id || file.fileUrl}
+                  className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    {getFileIcon(file.originalName)}
+                    <div>
+                      <p className="font-medium text-slate-800">
+                        {file.originalName}
+                      </p>
+                      <div className="flex items-center space-x-4 text-sm text-slate-600">
+                        <span>{file.fileType || 'Fichier'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      className="btn-outline btn-small"
+                      onClick={() => handleDownloadFile(file)}
+                    >
+                      Télécharger
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

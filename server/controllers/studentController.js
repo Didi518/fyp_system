@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 import { User } from '../models/user.js';
 import { Project } from '../models/project.js';
+import { Deadline } from '../models/deadline.js';
 import ErrorHandler from '../middlewares/error.js';
 import { Notification } from '../models/notification.js';
 import * as fileServices from '../services/fileServices.js';
@@ -205,10 +206,35 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
   const now = new Date();
 
-  const upcomingDeadline =
-    project?.deadline && new Date(project.deadline) >= now
-      ? project.deadline
-      : null;
+  const upcomingDeadline = [];
+
+  if (project?.deadline && new Date(project.deadline) >= now) {
+    upcomingDeadline
+      .push({
+        title: 'Date limite du projet',
+        deadline: project.deadline,
+        type: 'project',
+      })
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+  }
+
+  if (project?._id) {
+    const projectDeadlines = await Deadline.find({
+      project: project._id,
+      dueDate: { $gte: now },
+    })
+      .sort({ dueDate: 1 })
+      .select('name dueDate')
+      .lean();
+
+    upcomingDeadline.push(
+      ...projectDeadlines.map((deadline) => ({
+        title: deadline.name,
+        deadline: deadline.dueDate,
+        type: 'custom',
+      })),
+    );
+  }
 
   const topNotifications = await Notification.find({ user: studentId })
     .sort({ createdAt: -1 })
@@ -230,7 +256,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       project,
       upcomingDeadline,
       topNotifications,
-      feedbackNotifications,
+      feedback: feedbackNotifications,
       supervisorName,
     },
   });

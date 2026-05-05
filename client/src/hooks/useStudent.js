@@ -60,10 +60,7 @@ export const useStudent = () => {
     [dispatch],
   );
 
-  const fetchDashboardStats = useCallback(
-    () => dispatch(fetchDashboardStatsThunk()),
-    [dispatch],
-  );
+const fetchDashboardStats = () => dispatch(fetchDashboardStatsThunk());
 
   const getFeedback = useCallback(
     (projectId) => dispatch(getFeedbackThunk(projectId)),

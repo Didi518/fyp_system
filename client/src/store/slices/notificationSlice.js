@@ -1,6 +1,7 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { axiosInstance } from '../../lib/axios';
 import { toast } from 'react-toastify';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
+import { axiosInstance } from '../../lib/axios';
 
 const notificationSlice = createSlice({
   name: 'notification',

@@ -141,7 +141,7 @@ export const uploadFiles = createAsyncThunk(
 
 export const fetchDashboardStats = createAsyncThunk(
   'fetchDashboardStats',
-  async (_, rejectWithValue) => {
+  async (_, { rejectWithValue }) => {
     try {
       const res = await axiosInstance.get('/student/fetch-dashboard-stats');
 
@@ -200,7 +200,7 @@ export const downloadFile = createAsyncThunk(
         if (match?.[1]) fileName = match[1];
       }
 
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const url = window.URL.createObjectURL(res.data);
 
       const link = document.createElement('a');
       link.href = url;

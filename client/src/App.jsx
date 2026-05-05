@@ -101,7 +101,7 @@ const App = () => {
           <Route path="etudiants" element={<ManageStudents />} />
           <Route path="enseignants" element={<ManageTeachers />} />
           <Route path="assigner-superviseur" element={<AssignSupervisor />} />
-          <Route path="deadlines" element={<DeadlinesPage />} />
+          <Route path="date-limite" element={<DeadlinesPage />} />
           <Route path="projets" element={<ProjectsPage />} />
         </Route>
         <Route
@@ -116,7 +116,7 @@ const App = () => {
           <Route path="proposition" element={<SubmitProposal />} />
           <Route path="telecharger-fichiers" element={<UploadFiles />} />
           <Route path="superviseur" element={<SupervisorPage />} />
-          <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="retours" element={<FeedbackPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Routes>
