@@ -4,6 +4,8 @@ import {
   AlertTriangleIcon,
   BadgeCheckIcon,
   CheckCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   PlusIcon,
   TriangleAlertIcon,
   UsersIcon,
@@ -11,7 +13,7 @@ import {
   XIcon,
 } from 'lucide-react';
 
-import { useAdmin, usePopup } from '../../hooks';
+import { useAdmin, usePopup, usePagination } from '../../hooks';
 import AddStudent from '../../components/modal/AddStudent';
 
 const ManageStudents = () => {
@@ -31,7 +33,7 @@ const ManageStudents = () => {
   });
 
   useEffect(() => {
-    getAllUsers();
+    getAllUsers({ page: 1, limit: 1000 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -62,6 +64,27 @@ const ManageStudents = () => {
 
     return matchesSearch && matchesFilter;
   });
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedStudents,
+    goToPage,
+    resetPage,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(filteredStudents, 10);
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    resetPage();
+  };
+
+  const handleFilterChange = (value) => {
+    setFilterDepartment(value);
+    resetPage();
+  };
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -205,7 +228,7 @@ const ManageStudents = () => {
                 placeholder="Recherche par nom ou email..."
                 className="input-field w-full"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
             <div className="w-full md:w-48">
@@ -215,7 +238,7 @@ const ManageStudents = () => {
               <select
                 className="input-field w-full"
                 value={filterDepartment}
-                onChange={(e) => setFilterDepartment(e.target.value)}
+                onChange={(e) => handleFilterChange(e.target.value)}
               >
                 <option value="all">Toutes les Sections</option>
                 {departments.map((dept) => (
@@ -233,7 +256,7 @@ const ManageStudents = () => {
             <h2 className="card-title">Liste des Étudiants</h2>
           </div>
           <div className="overflow-x-auto">
-            {filteredStudents && filteredStudents.length > 0 ? (
+            {paginatedStudents && paginatedStudents.length > 0 ? (
               <table className="w-full">
                 <thead className="bg-slate-50">
                   <tr>
@@ -255,7 +278,7 @@ const ManageStudents = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {filteredStudents.map((student) => {
+                  {paginatedStudents.map((student) => {
                     return (
                       <tr key={student._id} className="hover:bg-slate-50">
                         <td className="px-6 py-4">
@@ -344,6 +367,49 @@ const ManageStudents = () => {
               )
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-slate-200">
+              <div className="text-sm text-slate-600 mb-4 sm:mb-0">
+                Affichage <span className="font-semibold">{startIndex}</span> à{' '}
+                <span className="font-semibold">{endIndex}</span> de{' '}
+                <span className="font-semibold">{totalItems}</span> résultats
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeftIcon className="w-5 h-5" />
+                </button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'border border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+                </div>
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRightIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {showModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

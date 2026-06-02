@@ -9,6 +9,7 @@ import {
   deleteUserByRole,
   getAllUsers,
   getAllProjects,
+  getDashboardStats,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -37,5 +38,12 @@ router.delete(
 router.get('/users', isAuthenticated, isAuthorized('admin'), getAllUsers);
 
 router.get('/projects', isAuthenticated, isAuthorized('admin'), getAllProjects);
+
+router.get(
+  '/fetch-dashboard-stats',
+  isAuthenticated,
+  isAuthorized('admin'),
+  getDashboardStats,
+);
 
 export default router;

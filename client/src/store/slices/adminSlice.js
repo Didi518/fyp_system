@@ -117,6 +117,26 @@ export const getAllProjects = createAsyncThunk(
   },
 );
 
+export const getDashboardStats = createAsyncThunk(
+  'getDashboardStats',
+  async (_, thunkAPI) => {
+    try {
+      const response = await axiosInstance.get('/admin/fetch-dashboard-stats');
+
+      return response.data.data.stats;
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          'Erreur lors de la récupération des stats admin',
+      );
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message ||
+          'Erreur lors de la récupération des stats admin',
+      );
+    }
+  },
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
@@ -124,9 +144,17 @@ const adminSlice = createSlice({
     teachers: [],
     projects: [],
     users: [],
+    pagination: {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0,
+      results: 0,
+    },
     stats: null,
     loadingUsers: false,
     loadingProjects: false,
+    loadingStats: false,
     error: null,
   },
   reducers: {},
@@ -177,6 +205,7 @@ const adminSlice = createSlice({
       .addCase(getAllUsers.fulfilled, (state, action) => {
         state.loadingUsers = false;
         state.users = action.payload.users;
+        state.pagination = action.payload.pagination;
       })
       .addCase(getAllUsers.rejected, (state, action) => {
         state.loadingUsers = false;
@@ -192,6 +221,19 @@ const adminSlice = createSlice({
       })
       .addCase(getAllProjects.rejected, (state, action) => {
         state.loadingProjects = false;
+        state.error = action.payload;
+      })
+      .addCase(getDashboardStats.pending, (state) => {
+        state.loadingStats = true;
+        state.stats = null;
+        state.error = null;
+      })
+      .addCase(getDashboardStats.fulfilled, (state, action) => {
+        state.loadingStats = false;
+        state.stats = action.payload;
+      })
+      .addCase(getDashboardStats.rejected, (state, action) => {
+        state.loadingStats = false;
         state.error = action.payload;
       });
   },

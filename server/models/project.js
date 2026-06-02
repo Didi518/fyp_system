@@ -1,6 +1,16 @@
 import mongoose from 'mongoose';
 
-import { ACTIVE_STATUSES, ARCHIVED_STATUS } from '../constants/constants.js';
+import { ACTIVE_STATUSES } from '../constants/constants.js';
+
+const feedbackSchema = new mongoose.Schema(
+  {
+    supervisorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    type: { type: String, enum: ['positive', 'negative', 'general'] },
+    title: String,
+    message: String,
+  },
+  { timestamps: true },
+);
 
 const projectSchema = new mongoose.Schema(
   {
@@ -34,14 +44,7 @@ const projectSchema = new mongoose.Schema(
       },
     ],
 
-    feedback: [
-      {
-        supervisorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        type: { type: String, enum: ['positive', 'negative', 'general'] },
-        title: String,
-        message: String,
-      },
-    ],
+    feedback: [feedbackSchema],
 
     deadline: Date,
   },

@@ -8,7 +8,7 @@ import {
   FileTextIcon,
 } from 'lucide-react';
 
-import { useStudent } from '../../hooks/useStudent';
+import { useStudent } from '../../hooks';
 
 const UploadFiles = () => {
   const codeRef = useRef(null);
@@ -31,7 +31,7 @@ const UploadFiles = () => {
   const handleUpload = async () => {
     let activeProject = project;
     if (!activeProject) {
-      const action = await fetchProject();
+      const action = fetchProject();
       activeProject = action?.payload || null;
     }
 
@@ -41,7 +41,7 @@ const UploadFiles = () => {
       return;
     }
 
-    const resultAction = await uploadFiles({
+    const resultAction = uploadFiles({
       projectId: activeProject._id,
       files: selectedFiles,
     });

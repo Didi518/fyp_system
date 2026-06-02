@@ -26,3 +26,20 @@ export const PROJECT_STATUS = {
     className: 'bg-red-100 text-red-800',
   },
 };
+
+export const NOTIFICATION_TYPES = {
+  request: 'demande',
+  approval: 'approbation',
+  rejection: 'refus',
+  feedback: 'retour',
+  deadline: 'date limite',
+  general: 'générale',
+  meeting: 'réunion',
+  system: 'Système',
+};
+
+export const NOTIFICATION_PRIORITIES = {
+  low: 'faible',
+  medium: 'moyenne',
+  high: 'élevée',
+};

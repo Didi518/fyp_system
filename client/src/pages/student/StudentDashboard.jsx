@@ -7,8 +7,7 @@ import {
   MessageCircleWarningIcon,
 } from 'lucide-react';
 
-import { useAuth } from '../../hooks/useAuth';
-import { useStudent } from '../../hooks/useStudent';
+import { useAuth, useStudent } from '../../hooks';
 import { PROJECT_STATUS } from '../../constants/constants';
 import { fetchDashboardStats } from '../../store/slices/studentSlice';
 
@@ -156,7 +155,7 @@ const StudentDashboard = () => {
                 {feedback.map((fb, index) => {
                   return (
                     <div
-                      key={index}
+                      key={fb._id || index}
                       className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -204,7 +203,7 @@ const StudentDashboard = () => {
                 {upcomingDeadline.map((d, i) => {
                   return (
                     <div
-                      key={i}
+                      key={d._id || i}
                       className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
                     >
                       <div>
@@ -238,7 +237,7 @@ const StudentDashboard = () => {
                 {topNotifications.map((n, i) => {
                   return (
                     <div
-                      key={i}
+                      key={n._id || i}
                       className="p-3 bg-slate-50 rounded-lg border border-slate-100"
                     >
                       <p className="font-medium text-slate-800">{n.message}</p>

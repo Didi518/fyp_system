@@ -7,12 +7,21 @@ import {
   deleteUser as deleteUserThunk,
   getAllUsers as getAllUsersThunk,
   getAllProjects as getAllProjectsThunk,
+  getDashboardStats as getDashboardStatsThunk,
 } from '../store/slices/adminSlice';
 
 export const useAdmin = () => {
   const dispatch = useDispatch();
-  const { users, students, teachers, projects, stats, loading, error } =
-    useSelector((state) => state.admin);
+  const {
+    users,
+    projects,
+    pagination,
+    stats,
+    loadingUsers,
+    loadingProjects,
+    loadingStats,
+    error,
+  } = useSelector((state) => state.admin);
 
   const createUser = useCallback(
     (payload) => {
@@ -46,13 +55,18 @@ export const useAdmin = () => {
     return dispatch(getAllProjectsThunk());
   }, [dispatch]);
 
+  const getDashboardStats = useCallback(() => {
+    return dispatch(getDashboardStatsThunk());
+  }, [dispatch]);
+
   return {
     users,
-    students,
-    teachers,
     projects,
+    pagination,
     stats,
-    loading,
+    loadingUsers,
+    loadingProjects,
+    loadingStats,
     error,
 
     createUser,
@@ -60,5 +74,6 @@ export const useAdmin = () => {
     deleteUser,
     getAllUsers,
     getAllProjects,
+    getDashboardStats,
   };
 };

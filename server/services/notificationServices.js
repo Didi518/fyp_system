@@ -18,5 +18,27 @@ export const notifyUser = async (
     type,
     link,
     priority,
-  })
+  });
+};
+
+export const markAsRead = async (notificationId, userId) => {
+  return await Notification.findOneAndUpdate(
+    { _id: notificationId, user: userId, isRead: { $ne: true } },
+    { isRead: true },
+    { new: true },
+  ).lean();
+};
+
+export const markAllAsRead = async (userId) => {
+  return await Notification.updateMany(
+    { user: userId, isRead: false },
+    { isRead: true },
+  );
+};
+
+export const deleteNotification = async (notificationId, userId) => {
+  return await Notification.findOneAndDelete({
+    _id: notificationId,
+    user: userId,
+  });
 };

@@ -1,10 +1,17 @@
+import { User } from '../models/user.js';
+import { Project } from '../models/project.js';
 import ErrorHandler from '../middlewares/error.js';
-import { roleLabels } from '../constants/constants.js';
 import { sendEmail } from '../services/emailServices.js';
 import * as userServices from '../services/userServices.js';
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import * as projectServices from '../services/projectServices.js';
+import { SupervisorRequest } from '../models/supervisorRequest.js';
 import { generateAccountActivationEmailTemplate } from '../utils/emailTemplates.js';
+import {
+  ACTIVE_STATUSES,
+  FINAL_STATUSES,
+  roleLabels,
+} from '../constants/constants.js';
 
 export const createUserByRole = asyncHandler(async (req, res, next) => {
   const { role } = req.body;
@@ -220,4 +227,35 @@ export const getAllProjects = asyncHandler(async (req, res, next) => {
 // TODO::
 // export const assignSupervisor = asyncHandler(async (req, res, next) => {});
 
-// export const getDashboardStats = asyncHandler(async (req, res, next) => {});
+export const getDashboardStats = asyncHandler(async (_req, res, _next) => {
+  const [
+    totalStudents,
+    totalTeachers,
+    totalProjects,
+    pendingRequests,
+    completedProjects,
+    pendingProjects,
+  ] = await Promise.all([
+    User.countDocuments({ role: 'student' }),
+    User.countDocuments({ role: 'teacher' }),
+    Project.countDocuments(),
+    SupervisorRequest.countDocuments({ status: 'pending' }),
+    Project.countDocuments({ status: { $in: FINAL_STATUSES } }),
+    Project.countDocuments({ status: { $in: ACTIVE_STATUSES } }),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: 'Stats Admin récupérées!',
+    data: {
+      stats: {
+        totalStudents,
+        totalTeachers,
+        totalProjects,
+        pendingRequests,
+        completedProjects,
+        pendingProjects,
+      },
+    },
+  });
+});

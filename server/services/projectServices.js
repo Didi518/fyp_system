@@ -23,7 +23,8 @@ export const archiveTerminalProjects = async (studentId) => {
 export const getProjectById = async (id) => {
   const project = await Project.findById(id)
     .populate('student', 'name email')
-    .populate('supervisor', 'name email');
+    .populate('supervisor', 'name email')
+    .populate('feedback.supervisorId', 'name email');
 
   if (!project) {
     throw new ErrorHandler('Projet non trouvé', 404);
@@ -70,7 +71,7 @@ export const getAllProjects = async (page = 1, limit = 10, status = null) => {
 
   const projects = await Project.find(query)
     .populate('student', 'name email')
-    .populate('supervisor', 'name')
+    .populate('supervisor', 'name email')
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
     .limit(limit);

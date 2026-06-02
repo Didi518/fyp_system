@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
   AlertTriangleIcon,
   BadgeCheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   PlusIcon,
   TriangleAlertIcon,
   UsersIcon,
@@ -11,13 +13,13 @@ import {
 } from 'lucide-react';
 
 import AddTeacher from '../../components/modal/AddTeacher';
-import { useAdmin, usePopup } from '../../hooks';
+import { useAdmin, usePopup, usePagination } from '../../hooks';
 
 const ManageTeachers = () => {
-  const { deleteUser, updateUser } = useAdmin();
-  const { isCreateTeacherModalOpen, openTeacherModal } = usePopup();
   const { users } = useSelector((state) => state.admin);
+  const { deleteUser, updateUser, getAllUsers } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
+  const { isCreateTeacherModalOpen, openTeacherModal } = usePopup();
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [teacherToDelete, setTeacherToDelete] = useState(null);
@@ -30,6 +32,11 @@ const ManageTeachers = () => {
     expertises: '',
     maxStudents: 10,
   });
+
+  useEffect(() => {
+    getAllUsers({ page: 1, limit: 1000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const teachers = useMemo(
     () => (users || []).filter((u) => u.role?.toLowerCase() === 'teacher'),
@@ -54,6 +61,27 @@ const ManageTeachers = () => {
 
     return matchesSearch && matchesFilter;
   });
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedTeachers,
+    goToPage,
+    resetPage,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(filteredTeachers, 10);
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    resetPage();
+  };
+
+  const handleFilterChange = (value) => {
+    setFilterDepartment(value);
+    resetPage();
+  };
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -209,7 +237,7 @@ const ManageTeachers = () => {
                 placeholder="Recherche par nom ou email..."
                 className="input-field w-full"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
             <div className="w-full md:w-48">
@@ -219,7 +247,7 @@ const ManageTeachers = () => {
               <select
                 className="input-field w-full"
                 value={filterDepartment}
-                onChange={(e) => setFilterDepartment(e.target.value)}
+                onChange={(e) => handleFilterChange(e.target.value)}
               >
                 <option value="all">Toutes les Sections</option>
                 {departments.map((dept) => (
@@ -237,7 +265,7 @@ const ManageTeachers = () => {
             <h2 className="card-title">Liste des Enseignants</h2>
           </div>
           <div className="overflow-x-auto">
-            {filteredTeachers && filteredTeachers.length > 0 ? (
+            {paginatedTeachers && paginatedTeachers.length > 0 ? (
               <table className="w-full">
                 <thead className="bg-slate-50">
                   <tr>
@@ -259,7 +287,7 @@ const ManageTeachers = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {filteredTeachers.map((teacher) => {
+                  {paginatedTeachers.map((teacher) => {
                     return (
                       <tr key={teacher._id} className="hover:bg-slate-50">
                         <td className="px-6 py-4">
@@ -335,6 +363,49 @@ const ManageTeachers = () => {
               )
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-slate-200">
+              <div className="text-sm text-slate-600 mb-4 sm:mb-0">
+                Affichage <span className="font-semibold">{startIndex}</span> à{' '}
+                <span className="font-semibold">{endIndex}</span> de{' '}
+                <span className="font-semibold">{totalItems}</span> résultats
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeftIcon className="w-5 h-5" />
+                </button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'border border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+                </div>
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRightIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {showModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

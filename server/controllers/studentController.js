@@ -209,13 +209,11 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
   const upcomingDeadline = [];
 
   if (project?.deadline && new Date(project.deadline) >= now) {
-    upcomingDeadline
-      .push({
-        title: 'Date limite du projet',
-        deadline: project.deadline,
-        type: 'project',
-      })
-      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+    upcomingDeadline.push({
+      title: 'Date limite du projet',
+      deadline: project.deadline,
+      type: 'project',
+    });
   }
 
   if (project?._id) {
@@ -235,6 +233,8 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       })),
     );
   }
+
+  upcomingDeadline.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 
   const topNotifications = await Notification.find({ user: studentId })
     .sort({ createdAt: -1 })
@@ -283,9 +283,17 @@ export const getFeedback = asyncHandler(async (req, res, next) => {
   }
 
   const sortedFeedback = project.feedback?.length
-    ? [...project.feedback].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      )
+    ? [...project.feedback]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((f) => ({
+          _id: f._id,
+          title: f.title,
+          message: f.message,
+          type: f.type,
+          createdAt: f.createdAt,
+          supervisorName: f.supervisorId?.name,
+          supervisorEmail: f.supervisorId?.email,
+        }))
     : [];
 
   res.status(200).json({

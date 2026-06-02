@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 import { useStudent } from '../../hooks';
-import { toast } from 'react-toastify';
 
 const SubmitProposal = () => {
   const { submitProposal } = useStudent();

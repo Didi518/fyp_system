@@ -1,0 +1,10 @@
+import express from 'express';
+
+import { isAuthenticated } from '../middlewares/authMiddleware.js';
+import { downloadFile } from '../controllers/projectController.js';
+
+const router = express.Router();
+
+router.get('/:projectId/files/:fileId/download', isAuthenticated, downloadFile);
+
+export default router;
